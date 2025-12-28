@@ -26,7 +26,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  */
 @TeleOp(name = "Sensor: SparkFun OTOS", group = "Sensor")
 @Disabled
-public class SensorSparkFunOTOS extends LinearOpMode {
+public class  SensorSparkFunOTOS extends LinearOpMode {
     // Create an instance of the sensor
     SparkFunOTOS myOtos;
 

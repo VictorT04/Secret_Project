@@ -6,11 +6,17 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 
+import org.firstinspires.ftc.teamcode.Robot.RobotContainer;
+
+import static org.firstinspires.ftc.teamcode.Robot.Constants.intakeNominalVoltage;
+
 public class IntakeSubsystem extends SubsystemBase {
-    private final DcMotor intakeMotor;
+    private final DcMotor m_intakeMotor;
 
     private WantedState m_wantedState = WantedState.STAND_BY;
     private SystemState m_systemState = SystemState.IDLE;
+
+    private RobotContainer robot;
 
 
     public enum WantedState
@@ -25,13 +31,15 @@ public class IntakeSubsystem extends SubsystemBase {
         INTAKING
     }
 
-    public IntakeSubsystem(HardwareMap hmap)
+    public IntakeSubsystem(HardwareMap hmap, RobotContainer robot)
     {
-        intakeMotor = hmap.get(DcMotor.class,"intakeMotor");
+        m_intakeMotor = hmap.get(DcMotor.class,"intakeMotor");
 
-        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD); //TUNEME
-        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        m_intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        m_intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD); //TUNEME
+        m_intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        this.robot = robot;
     }
 
     public void SetWantedState(WantedState wantedState)
@@ -39,17 +47,33 @@ public class IntakeSubsystem extends SubsystemBase {
         m_wantedState = wantedState;
     }
 
+    private void SetMotorPower(double power)
+    {
+        power = robot.GetVoltageSensorValue()*power/intakeNominalVoltage;
+        if (power > 1.0)
+        {
+            power = 1.0;
+        }
+        else if (power < -1.0)
+        {
+            power = -1.0;
+        }
+        m_intakeMotor.setPower(power);
+    }
+
     @Override
     public void periodic()
     {
+        RunStateMachine();
+
         switch (m_systemState)
         {
             case IDLE:
-                intakeMotor.setPower(0.0);
+                SetMotorPower(0.0);
                 break;
 
             case INTAKING:
-                intakeMotor.setPower(1.0);
+                SetMotorPower(1.0);
                 break;
 
             default:
