@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.Camera;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.IntakeSubsystem;
 
 import org.firstinspires.ftc.teamcode.Robot.Commands.CollectCommand;
@@ -16,9 +17,17 @@ import org.firstinspires.ftc.teamcode.Robot.Subsystems.TurresSubsystem;
 
 
 public class RobotContainer {
+
+    public enum ObeliskPattern
+    {
+        PPG, //PURPLE->PURPLE->GREEN, Tag ID : 23
+        PGP, //PURPLE->GREEN->PURPLE, Tag ID : 22
+        GPP //GREEN->PURPLE->PURPLE, Tag ID : 21
+    }
     private IntakeSubsystem m_intake;
     private TurresSubsystem m_turres;
     private ShooterSubsystem m_shooter;
+    private Camera m_camera;
 
     private GamepadEx m_driverGamepad;
 
@@ -33,10 +42,11 @@ public class RobotContainer {
         TELEOP_BLUE
     }
 
-    RobotContainer(RobotMode robotMode, HardwareMap hmap, IntakeSubsystem intake)
+    RobotContainer(RobotMode robotMode, HardwareMap hmap)
     {
         voltageSensor = hmap.get(VoltageSensor.class,"Control Hub");
-        m_intake = intake;
+        m_camera = new Camera(hmap, robotMode);
+
         if (robotMode == RobotMode.TELEOP_RED)
         {
             ConfigureREDBindings();

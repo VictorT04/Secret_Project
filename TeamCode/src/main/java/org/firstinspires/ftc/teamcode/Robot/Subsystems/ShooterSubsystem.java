@@ -21,21 +21,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class ShooterSubsystem extends SubsystemBase{
-    private final DcMotorEx m_rightMotor;
-    private final DcMotorEx m_leftMotor;
-    private Servo m_shooterServo;
-
-    private PidRBL m_topMotorPIDController, m_bottomMotorPIDController;
-
-    private double m_targetVelocity = 0.0;
-
-    private double m_currentMotorsVelocity = 0.0;
-
-    private WantedState m_wantedState = WantedState.STAND_BY;
-    private SystemState m_systemState = SystemState.IDLE;
-
-    private final RobotContainer robot;
-
     public enum WantedState
     {
         STAND_BY,
@@ -51,6 +36,20 @@ public class ShooterSubsystem extends SubsystemBase{
         AT_EJECT_VELOCITY,
         AT_SHOOT_VELOCITY
     }
+    private final DcMotorEx m_rightMotor;
+    private final DcMotorEx m_leftMotor;
+    private Servo m_shooterServo;
+
+    private PidRBL m_topMotorPIDController, m_bottomMotorPIDController;
+
+    private double m_targetVelocity = 0.0;
+
+    private double m_currentMotorsVelocity = 0.0;
+
+    private WantedState m_wantedState = WantedState.STAND_BY;
+    private SystemState m_systemState = SystemState.IDLE;
+
+    private final RobotContainer robot;
 
     ShooterSubsystem (HardwareMap hmap, RobotContainer robot)
     {
