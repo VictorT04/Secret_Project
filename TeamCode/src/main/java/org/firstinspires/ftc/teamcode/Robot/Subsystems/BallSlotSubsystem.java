@@ -41,11 +41,16 @@ public class BallSlotSubsystem {
         UNKNOWN
     }
 
-    BallSlotSubsystem(HardwareMap hmap, String slotName)
+    BallSlotSubsystem(HardwareMap hmap, String slotName, boolean reverseServo)
     {
         m_slotServo = hmap.get(Servo.class,slotName + "SlotServo");
         m_slotColorSensor = hmap.get(ColorSensor.class, slotName + "SlotColorSensor");
         m_slotDistanceSensor = hmap.get(DistanceSensor.class, slotName + "SlotDistanceSensor");
+
+        if (reverseServo)
+        {
+            m_slotServo.setDirection(Servo.Direction.REVERSE);
+        }
     }
 
     public SlotState getSlotState()
@@ -102,9 +107,9 @@ public class BallSlotSubsystem {
         m_slotServo.setPosition(SlotServoHomePos);
     }
 
-    public void SetSlotState()
+    public void SetSlotState(SlotState slotState)
     {
-        //TODO
+        m_slotState = slotState;
     }
 
     public double GetServoPos()

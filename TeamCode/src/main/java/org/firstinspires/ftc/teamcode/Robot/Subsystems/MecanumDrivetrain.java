@@ -194,7 +194,7 @@ public class MecanumDrivetrain {
           return robot.GetVoltageSensorValue()*value/drivetrainNominalVoltage;
       }
 
-      /// Check if any wanted power is greater than 1 or smaller than 1 and reduces it if needed keeping the proportinality.
+      /// Check if any wanted power is greater than 1 or smaller than 1 and reduces it if needed keeping proportionality.
       /// Then apply the 4 variables for MotorPower to the correct motor
       /// Don't use voltage compensation
       ///

@@ -7,17 +7,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 
 import org.firstinspires.ftc.teamcode.Robot.RobotContainer;
+import org.firstinspires.ftc.teamcode.lib.Dashboard;
 
 import static org.firstinspires.ftc.teamcode.Robot.Constants.intakeNominalVoltage;
 
 public class IntakeSubsystem extends SubsystemBase {
-    private final DcMotor m_intakeMotor;
-
-    private WantedState m_wantedState = WantedState.STAND_BY;
-    private SystemState m_systemState = SystemState.IDLE;
-
-    private RobotContainer robot;
-
 
     public enum WantedState
     {
@@ -30,6 +24,12 @@ public class IntakeSubsystem extends SubsystemBase {
         IDLE,
         INTAKING
     }
+    private final DcMotor m_intakeMotor;
+
+    private WantedState m_wantedState = WantedState.STAND_BY;
+    private SystemState m_systemState = SystemState.IDLE;
+
+    private final RobotContainer robot;
 
     public IntakeSubsystem(HardwareMap hmap, RobotContainer robot)
     {
@@ -77,6 +77,7 @@ public class IntakeSubsystem extends SubsystemBase {
                 break;
 
             default:
+                Dashboard.Telemetry_with_Text("Intake", "unknown system state used");
                 break;
         }
     }
@@ -95,8 +96,8 @@ public class IntakeSubsystem extends SubsystemBase {
                     m_systemState = SystemState.IDLE;
 
             default:
+                Dashboard.Telemetry_with_Text("Intake", "can't run state machine with an unknown wanted state");
                 break;
-
         }
     }
 

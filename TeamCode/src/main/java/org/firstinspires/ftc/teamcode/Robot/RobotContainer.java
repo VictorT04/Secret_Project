@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.Robot.Commands.CollectCommand;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.MecanumDrivetrain;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.TurresSubsystem;
+import org.firstinspires.ftc.teamcode.lib.Dashboard;
 
 
 public class RobotContainer {
@@ -22,7 +23,8 @@ public class RobotContainer {
     {
         PPG, //PURPLE->PURPLE->GREEN, Tag ID : 23
         PGP, //PURPLE->GREEN->PURPLE, Tag ID : 22
-        GPP //GREEN->PURPLE->PURPLE, Tag ID : 21
+        GPP, //GREEN->PURPLE->PURPLE, Tag ID : 21
+        UNKNOWN
     }
     private IntakeSubsystem m_intake;
     private TurresSubsystem m_turres;
@@ -31,8 +33,10 @@ public class RobotContainer {
 
     private GamepadEx m_driverGamepad;
 
-    private VoltageSensor voltageSensor;
+    private final VoltageSensor voltageSensor;
     private double m_voltageSensorValue;
+
+    private ObeliskPattern m_gameObelisk = ObeliskPattern.UNKNOWN;
 
     public enum RobotMode
     {
@@ -94,5 +98,15 @@ public class RobotContainer {
         m_driverGamepad.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
                 new CollectCommand(m_intake)
         );
+    }
+
+    public double GetCameraTargetY()
+    {
+        return m_camera.GetTargetTy();
+    }
+
+    public double GetCameraTargetArea()
+    {
+        return m_camera.GetTargetArea();
     }
 }

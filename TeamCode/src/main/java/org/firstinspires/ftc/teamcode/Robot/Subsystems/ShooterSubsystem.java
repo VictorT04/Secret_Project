@@ -2,17 +2,20 @@ package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 
+import static org.firstinspires.ftc.teamcode.Robot.Constants.shooterMaxDistanceOfShoot;
 import static org.firstinspires.ftc.teamcode.Robot.Constants.shooterNominalVoltage;
 import static org.firstinspires.ftc.teamcode.Robot.Constants.shooterVelocityTolerance;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.topShooterKP;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.topShooterKI;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.topShooterKD;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.bottomShooterKP;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.bottomShooterKI;
-import static org.firstinspires.ftc.teamcode.Robot.Constants.bottomShooterKD;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.ShooterKP;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.ShooterKI;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.ShooterKD;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.shooterShootVelocity;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.shooterEjectVelocity;
+import static org.firstinspires.ftc.teamcode.Robot.Constants.cameraDistanceScaleCoef;
 
 import org.firstinspires.ftc.teamcode.Robot.RobotContainer;
 import org.firstinspires.ftc.teamcode.lib.PidRBL;
+import org.firstinspires.ftc.teamcode.lib.Utils;
+import org.firstinspires.ftc.teamcode.lib.Dashboard;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -31,29 +34,28 @@ public class ShooterSubsystem extends SubsystemBase{
     public enum SystemState
     {
         IDLE,
-        RAMPING_TO_EJECT,
-        RAMPING_TO_SHOOT,
-        AT_EJECT_VELOCITY,
-        AT_SHOOT_VELOCITY
+        PREPARING_TO_EJECT,
+        PREPARING_TO_SHOOT,
+        READY_TO_EJECT,
+        READY_TO_SHOOT
     }
     private final DcMotorEx m_rightMotor;
-    private final DcMotorEx m_leftMotor;
+    private final DcMotor m_leftMotor;
     private Servo m_shooterServo;
 
-    private PidRBL m_topMotorPIDController, m_bottomMotorPIDController;
-
-    private double m_targetVelocity = 0.0;
-
+    private PidRBL m_motorsPIDController;
     private double m_currentMotorsVelocity = 0.0;
 
     private WantedState m_wantedState = WantedState.STAND_BY;
     private SystemState m_systemState = SystemState.IDLE;
 
+    private double m_servoTargetPos, m_currentServoTargetPos;
+
     private final RobotContainer robot;
 
     ShooterSubsystem (HardwareMap hmap, RobotContainer robot)
     {
-        m_rightMotor = hmap.get(DcMotorEx.class, "ShooterRightMotor");
+        m_rightMotor = hmap.get(DcMotorEx.class, "ShooterRightMotorAndShooterEncoder");
         m_leftMotor = hmap.get(DcMotorEx.class, "ShooterLeftMotor");
 
         m_rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -62,15 +64,12 @@ public class ShooterSubsystem extends SubsystemBase{
         m_rightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         m_leftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        m_leftMotor.setDirection(DcMotorSimple.Direction.FORWARD); //TUNEME
+        m_leftMotor.setDirection(DcMotorSimple.Direction.REVERSE); //TUNEME
         m_leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         m_leftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        m_bottomMotorPIDController = new PidRBL(topShooterKP, topShooterKI, topShooterKD);
-        m_bottomMotorPIDController.SetTolerance(shooterVelocityTolerance);
-
-        m_topMotorPIDController = new PidRBL(bottomShooterKP, bottomShooterKI, bottomShooterKD);
-        m_topMotorPIDController.SetTolerance(shooterVelocityTolerance);
+        m_motorsPIDController = new PidRBL(ShooterKP, ShooterKI, ShooterKD);
+        m_motorsPIDController.SetTolerance(shooterVelocityTolerance);
 
         this.robot = robot;
     }
@@ -84,41 +83,45 @@ public class ShooterSubsystem extends SubsystemBase{
 
         switch (m_systemState)
         {
-            case AT_SHOOT_VELOCITY:
-            case AT_EJECT_VELOCITY:
+            case IDLE:
+                SetMotorPower(0.0);
                 break;
 
-            case RAMPING_TO_SHOOT:
-            case RAMPING_TO_EJECT:
-                SetMotorPower(m_bottomMotorPIDController.Calculate(m_targetVelocity,m_currentMotorsVelocity),
-                              m_topMotorPIDController.Calculate(m_targetVelocity,m_currentMotorsVelocity));
+            case READY_TO_EJECT:
+            case READY_TO_SHOOT:
+                break;
+
+            case PREPARING_TO_EJECT:
+                SetMotorPower(m_motorsPIDController.Calculate(shooterEjectVelocity,m_currentMotorsVelocity));
+                m_shooterServo.setPosition(m_servoTargetPos);
+                break;
+
+            case PREPARING_TO_SHOOT:
+                SetMotorPower(m_motorsPIDController.Calculate(shooterShootVelocity,m_currentMotorsVelocity));
+                m_shooterServo.setPosition(m_servoTargetPos);
+                break;
+
+            default:
+                Dashboard.Telemetry_with_Text("Shooter", "unknown system state used");
+                SetMotorPower(0.0);
+                break;
         }
     }
 
-    private void SetMotorPower(double topMotorPower, double bottomMotorPower)
+    private void SetMotorPower(double motorPower)
     {
-        topMotorPower = GetVoltageCompensed(topMotorPower);
-        bottomMotorPower = GetVoltageCompensed(bottomMotorPower);
-        if (topMotorPower > 1.0)
+        motorPower = GetVoltageCompensed(motorPower);
+        if (motorPower > 1.0)
         {
-            topMotorPower = 1.0;
+            motorPower = 1.0;
         }
-        else if (topMotorPower < -1.0)
+        else if (motorPower < -1.0)
         {
-            topMotorPower = -1.0;
-        }
-
-        if (bottomMotorPower > 1.0)
-        {
-            bottomMotorPower = 1.0;
-        }
-        else if (bottomMotorPower < -1.0)
-        {
-            bottomMotorPower = -1.0;
+            motorPower = -1.0;
         }
 
-        m_rightMotor.setPower(bottomMotorPower);
-        m_leftMotor.setPower(topMotorPower);
+        m_rightMotor.setPower(motorPower);
+        m_leftMotor.setPower(motorPower);
     }
 
     private double GetVoltageCompensed(double value)
@@ -129,6 +132,7 @@ public class ShooterSubsystem extends SubsystemBase{
     private void UpdateInputs()
     {
         m_currentMotorsVelocity = m_rightMotor.getVelocity();
+        m_currentServoTargetPos = m_shooterServo.getPosition();
     }
 
     private void RunStateMachine()
@@ -143,20 +147,21 @@ public class ShooterSubsystem extends SubsystemBase{
                 break;
 
             case SHOOT:
-                if (m_systemState != SystemState.AT_SHOOT_VELOCITY)
+                if (m_systemState != SystemState.READY_TO_SHOOT)
                 {
-                    m_systemState = SystemState.RAMPING_TO_SHOOT;
+                    m_systemState = SystemState.PREPARING_TO_SHOOT;
                 }
                 break;
 
             case EJECT_BALL:
-                if (m_systemState != SystemState.AT_EJECT_VELOCITY)
+                if (m_systemState != SystemState.READY_TO_EJECT)
                 {
-                    m_systemState = SystemState.RAMPING_TO_EJECT;
+                    m_systemState = SystemState.PREPARING_TO_EJECT;
                 }
                 break;
 
             default:
+                Dashboard.Telemetry_with_Text("Shooter", "can't run state machine with an unknown wanted state");
                 break;
         }
 
@@ -165,36 +170,41 @@ public class ShooterSubsystem extends SubsystemBase{
             case IDLE:
                 break;
 
-            case RAMPING_TO_EJECT:
-                if (m_currentMotorsVelocity >= m_targetVelocity-shooterVelocityTolerance &&
-                    m_currentMotorsVelocity <= m_targetVelocity+shooterVelocityTolerance)
+            case PREPARING_TO_EJECT:
+                if (Utils.IsInRange(m_currentMotorsVelocity, shooterEjectVelocity, shooterVelocityTolerance))
                 {
-                    m_systemState = SystemState.AT_EJECT_VELOCITY;
-                }
-                else
-                {
-                    //TODO : set m_targetVelocity with target distance
+                    m_systemState = SystemState.READY_TO_EJECT;
                 }
                 break;
 
-            case RAMPING_TO_SHOOT:
-                if (m_currentMotorsVelocity >= m_targetVelocity-shooterVelocityTolerance &&
-                    m_currentMotorsVelocity <= m_targetVelocity+shooterVelocityTolerance)
+            case PREPARING_TO_SHOOT:
+                UpdateServoTargetPos();
+                if (Utils.IsInRange(m_currentMotorsVelocity, shooterShootVelocity, shooterVelocityTolerance) && m_currentServoTargetPos == m_servoTargetPos
+                )
                 {
-                    m_systemState = SystemState.AT_SHOOT_VELOCITY;
-                }
-                else
-                {
-                    //TODO : set m_targetVelocity
+                    m_systemState = SystemState.READY_TO_SHOOT;
                 }
                 break;
 
-            case AT_EJECT_VELOCITY:
-            case AT_SHOOT_VELOCITY:
+            case READY_TO_EJECT:
+            case READY_TO_SHOOT:
+                UpdateServoTargetPos();
                 break;
 
             default:
+                Dashboard.Telemetry_with_Text("Shooter", "can't run state machine with an unknown system state");
                 break;
+        }
+    }
+
+    private void UpdateServoTargetPos()
+    {
+        double targetArea = robot.GetCameraTargetArea();
+        if (targetArea > 0.0)
+        {
+            //TODO : corrected target area & recheck this method
+            double targetDistance = Math.sqrt(targetArea)/cameraDistanceScaleCoef;
+            m_servoTargetPos = targetDistance/shooterMaxDistanceOfShoot;
         }
     }
 }

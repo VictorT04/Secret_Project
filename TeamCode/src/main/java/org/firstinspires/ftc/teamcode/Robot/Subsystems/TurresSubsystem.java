@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.Robot.Subsystems;
 
+import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Robot.RobotContainer;
+import org.firstinspires.ftc.teamcode.lib.Dashboard;
 import org.firstinspires.ftc.teamcode.lib.PidRBL;
+import org.firstinspires.ftc.teamcode.lib.Utils;
 
 import static org.firstinspires.ftc.teamcode.Robot.Constants.turresKP;
 import static org.firstinspires.ftc.teamcode.Robot.Constants.turresKI;
@@ -13,7 +16,24 @@ import static org.firstinspires.ftc.teamcode.Robot.Constants.turresKD;
 import static org.firstinspires.ftc.teamcode.Robot.Constants.turresNominalVoltage;
 import static org.firstinspires.ftc.teamcode.Robot.Constants.turresOrientationTolerance;
 
-public class TurresSubsystem {
+public class TurresSubsystem extends SubsystemBase {
+
+    public enum WantedState
+    {
+        STAND_BY,
+        ALINE_WITH_TARGET,
+        RETURN_HOME
+    }
+
+    public enum SystemState
+    {
+        IDLE,
+        SEARCHING_TARGET,
+        ALINEYING_TO_TARGET,
+        ALINED_TO_TARGET,
+        RETURNING_HOME,
+        AT_HOME
+    }
     private final DcMotor m_turresMotor;
 
     private PidRBL m_turresPIDController;
@@ -23,28 +43,11 @@ public class TurresSubsystem {
 
     private double m_targetPosition;
 
-    private double m_turresHeading;
+    private double m_turresHeading; //in degrees
 
     private RobotContainer robot;
 
-    public enum WantedState
-    {
-        STAND_BY,
-        IDENTIFY_OBELISK,
-        ALINE_WITH_TARGET,
-        RETURN_HOME
-    }
-
-    public enum SystemState
-    {
-        IDLE,
-        SEARCHING_OBELISK,
-        SEARCHING_TARGET,
-        ALINEYING_TO_TARGET,
-        ALINED_TO_TARGET,
-        RETURNING_HOME,
-        AT_HOME
-    }
+    private double m_targetY;
 
     public TurresSubsystem(HardwareMap hmap, RobotContainer robot)
     {
@@ -85,6 +88,35 @@ public class TurresSubsystem {
         m_turresMotor.setPower(power);
     }
 
+    @Override
+    public void periodic()
+    {
+        UpdateInputs();
+
+        RunStateMachine();
+
+        switch(m_systemState)
+        {
+            case SEARCHING_TARGET:
+            case ALINED_TO_TARGET:
+            case AT_HOME:
+            case IDLE:
+                SetMotorPower(0.0);
+                break;
+
+            case ALINEYING_TO_TARGET:
+                SetMotorPower(m_turresPIDController.Calculate(m_targetPosition, m_turresHeading));
+                break;
+
+            case RETURNING_HOME:
+                SetMotorPower(m_turresPIDController.Calculate(0.0, m_turresHeading));
+                break;
+
+            default:
+                Dashboard.Telemetry_with_Text("Turres", "unknown system state used");
+        }
+    }
+
     public void RunStateMachine()
     {
         switch (m_wantedState)
@@ -95,18 +127,13 @@ public class TurresSubsystem {
                     m_systemState = SystemState.RETURNING_HOME;
                 break;
 
-            case IDENTIFY_OBELISK:
-                if (m_systemState != SystemState.SEARCHING_OBELISK)
-                    m_systemState = SystemState.SEARCHING_OBELISK;
-                break;
-
             case ALINE_WITH_TARGET:
                 if (m_systemState != SystemState.ALINED_TO_TARGET && m_systemState != SystemState.ALINEYING_TO_TARGET)
                     m_systemState = SystemState.SEARCHING_TARGET;
                 break;
 
             default:
-                //TODO
+                Dashboard.Telemetry_with_Text("Turres", "can't run state machine with an unknown wanted state");
                 break;
         }
 
@@ -122,23 +149,49 @@ public class TurresSubsystem {
                 break;
 
             case SEARCHING_TARGET:
-                //TODO
+                m_targetY = robot.GetCameraTargetY();
+                if (m_targetY != 90.0)
+                {
+                    m_targetPosition = m_turresHeading-m_targetY;
+                    m_systemState = SystemState.ALINEYING_TO_TARGET;
+                }
                 break;
 
             case ALINEYING_TO_TARGET:
-                if (m_turresHeading <= m_targetPosition + turresOrientationTolerance && m_turresHeading >= m_targetPosition-turresOrientationTolerance)
+                m_targetY = robot.GetCameraTargetY();
+                if (m_targetY != 90.0)
+                {
+                    m_targetPosition = m_turresHeading-m_targetY;
+                }
+                else
+                {
+                    m_systemState = SystemState.SEARCHING_TARGET;
+                }
+                if (Utils.IsInRange(m_turresHeading, m_targetPosition,turresOrientationTolerance))
                     m_systemState = SystemState.ALINED_TO_TARGET;
                 break;
 
-            case SEARCHING_OBELISK:
-                break;
-
             case ALINED_TO_TARGET:
+                if (!Utils.IsInRange(m_turresHeading, m_targetPosition,turresOrientationTolerance))
+                {
+                    m_targetY = robot.GetCameraTargetY();
+                    if (m_targetY != 90.0)
+                    {
+                        m_targetPosition = m_turresHeading-m_targetY;
+                    }
+                    else
+                    {
+                        m_systemState = SystemState.SEARCHING_TARGET;
+                    }
+                }
                 break;
 
             case AT_HOME:
                 break;
 
+            default:
+                Dashboard.Telemetry_with_Text("Turres", "can't run state machine with an unknown system state");
+                break;
         }
     }
 }

@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import static org.firstinspires.ftc.teamcode.Robot.Constants.SlotServoFeedingPos;
 
+import org.firstinspires.ftc.teamcode.lib.Dashboard;
+
 public class FeederSubsystem extends SubsystemBase {
 
     public enum WantedState
@@ -40,7 +42,7 @@ public class FeederSubsystem extends SubsystemBase {
 
     public FeederSubsystem(HardwareMap hmap)
     {
-        m_feederSlots = new BallSlotSubsystem[] {new BallSlotSubsystem(hmap, "front"), new BallSlotSubsystem(hmap, "middle"), new BallSlotSubsystem(hmap, "back")};
+        m_feederSlots = new BallSlotSubsystem[] {new BallSlotSubsystem(hmap, "front",false), new BallSlotSubsystem(hmap, "middle",false), new BallSlotSubsystem(hmap, "back",true)};
     }
 
     public void SetWantedState(WantedState wantedState)
@@ -191,7 +193,7 @@ public class FeederSubsystem extends SubsystemBase {
                 break;
 
             default:
-                //TODO
+                Dashboard.Telemetry_with_Text("Feeder", "can't run state machine with an unknown wanted state");
                 break;
         }
 
@@ -218,6 +220,7 @@ public class FeederSubsystem extends SubsystemBase {
                     if (m_feederSlots[i].getSlotState() == BallSlotSubsystem.SlotState.GREEN)
                     {
                         m_feedingSlotID = i;
+                        m_systemState = SystemState.FEEDING_GREEN;
                     }
                 }
                 break;
@@ -228,6 +231,7 @@ public class FeederSubsystem extends SubsystemBase {
                     if (m_feederSlots[i].getSlotState() == BallSlotSubsystem.SlotState.PURPLE)
                     {
                         m_feedingSlotID = i;
+                        m_systemState = SystemState.FEEDING_PURPLE;
                     }
                 }
                 break;
@@ -243,12 +247,26 @@ public class FeederSubsystem extends SubsystemBase {
                     m_feederSlots[m_feedingSlotID].ReturnServoToHome();
                     m_wantedState = WantedState.STAND_BY;
                     m_systemState = SystemState.IDLE;
+                    m_feedingSlotID = -1;
                 }
                 break;
 
             default:
-                //TODO
+                Dashboard.Telemetry_with_Text("Feeder", "can't run state machine with an unknown system state");
                 break;
+        }
+    }
+
+    /// Use this method to manually set the state of one slot (chosen in parameters, 0 for front, 1 for middle, 2 for back)
+    public void SetSlotState(int slotID, BallSlotSubsystem.SlotState slotState)
+    {
+        if (slotID >= 0 && slotID <= 2)
+        {
+            m_feederSlots[slotID].SetSlotState(slotState);
+        }
+        else
+        {
+            Dashboard.Telemetry_with_Text("Feeder","SetSlotState used with an unknown ID");
         }
     }
 }

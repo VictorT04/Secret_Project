@@ -4,9 +4,11 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class Constants {
-    public static double topShooterKP = 0.1, topShooterKI = 0.0, topShooterKD = 0.0; //TUNEME
-    public static double bottomShooterKP = 0.1, bottomShooterKI = 0.0, bottomShooterKD = 0.0; //TUNEME
+    public static double ShooterKP = 0.1, ShooterKI = 0.0, ShooterKD = 0.0; //TUNEME
     public static double shooterVelocityTolerance = 1.0; //TUNEME
+    public static double shooterShootVelocity = 5500.0, shooterEjectVelocity = 1500.0; //in RPM TUNEME
+    public static double shooterMaxDistanceOfShoot = 10.0;
+
 
     public static double turresKP = 0.1, turresKI = 0.0, turresKD = 0.0; //TUNEME
     public static double turresOrientationTolerance = 0.0; //TUNEME
@@ -22,4 +24,7 @@ public class Constants {
     public static double PurpleBallRedValue = 150.0, PurpleBallBlueValue = 150.0, PurpleBallGreenValue = 80.0; //TUNEME
     public static double ColorSensorTolerance = 5.0; //TUNEME
     public static double SlotServoFeedingPos = 0.7, SlotServoHomePos = 0.2; //TUNEME
+
+    public static double cameraDistanceScaleCoef = 2.3147; //TUNEME
+
 }

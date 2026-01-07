@@ -59,13 +59,18 @@ public class Camera {
         return 90.0;
     }
 
-    public boolean IsSeeingGoal()
+    public double GetTargetArea()
     {
         if (m_cameraResults != null)
         {
-            return (m_cameraResults.getPipelineIndex() != 0);
+            return m_cameraResults.getTa();
         }
-        return false;
+        return 0.0;
+    }
+
+    public boolean IsSeeingGoal()
+    {
+        return (m_cameraResults != null && m_cameraResults.getPipelineIndex() != 0);
     }
 
     public void UpdateCameraResults()
