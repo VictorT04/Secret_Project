@@ -69,6 +69,11 @@ public class TurresSubsystem extends SubsystemBase {
         m_wantedState = wantedState;
     }
 
+    public SystemState GetSystemState()
+    {
+        return m_systemState;
+    }
+
     private void UpdateInputs()
     {
         m_turresHeading = (m_turresMotor.getCurrentPosition() % 8192.0) / 8192.0/360;

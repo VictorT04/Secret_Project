@@ -41,9 +41,9 @@ public class ShooterSubsystem extends SubsystemBase{
     }
     private final DcMotorEx m_rightMotor;
     private final DcMotor m_leftMotor;
-    private Servo m_shooterServo;
+    private final Servo m_shooterServo;
 
-    private PidRBL m_motorsPIDController;
+    private final PidRBL m_motorsPIDController;
     private double m_currentMotorsVelocity = 0.0;
 
     private WantedState m_wantedState = WantedState.STAND_BY;
@@ -68,10 +68,22 @@ public class ShooterSubsystem extends SubsystemBase{
         m_leftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         m_leftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        m_shooterServo = hmap.get(Servo.class,"ShooterServo");
+
         m_motorsPIDController = new PidRBL(ShooterKP, ShooterKI, ShooterKD);
         m_motorsPIDController.SetTolerance(shooterVelocityTolerance);
 
         this.robot = robot;
+    }
+
+    public void SetWantedState(WantedState wantedState)
+    {
+        m_wantedState = wantedState;
+    }
+
+    public SystemState GetSystemState()
+    {
+        return m_systemState;
     }
 
     @Override

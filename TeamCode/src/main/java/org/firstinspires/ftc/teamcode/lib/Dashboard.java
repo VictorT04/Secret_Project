@@ -2,16 +2,16 @@ package org.firstinspires.ftc.teamcode.lib;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 
-import android.graphics.Bitmap;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
 public class Dashboard {
     static FtcDashboard m_dashboard;
 
-    private static boolean DashboardActivated = true; //Change to false to disable sending information to the Dashboard. Ex : in competition
+    private static boolean DashboardActivated = true;
+    //Change to false to disable sending information to the Dashboard. Ex : in competition
+    //Caution : It wouldn't disable the FTCDashboard itself, to do that you must run the OpMode Enable/Disable Dashboard in the DS.
 
     public static void InitDashboard() {
         if (DashboardActivated)

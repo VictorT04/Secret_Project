@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
+import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.Camera;
+import org.firstinspires.ftc.teamcode.Robot.Subsystems.FeederSubsystem;
 import org.firstinspires.ftc.teamcode.Robot.Subsystems.IntakeSubsystem;
 
 import org.firstinspires.ftc.teamcode.Robot.Commands.CollectCommand;
@@ -29,9 +31,13 @@ public class RobotContainer {
     private IntakeSubsystem m_intake;
     private TurresSubsystem m_turres;
     private ShooterSubsystem m_shooter;
+    private FeederSubsystem m_feeder;
+    private MecanumDrivetrain m_drivetrain;
     private Camera m_camera;
 
-    private GamepadEx m_driverGamepad;
+    private GamepadEx m_AlexisGamepad;
+
+    private GamepadEx m_VictorGamepad;
 
     private final VoltageSensor voltageSensor;
     private double m_voltageSensorValue;
@@ -51,13 +57,9 @@ public class RobotContainer {
         voltageSensor = hmap.get(VoltageSensor.class,"Control Hub");
         m_camera = new Camera(hmap, robotMode);
 
-        if (robotMode == RobotMode.TELEOP_RED)
+        if (robotMode == RobotMode.TELEOP_BLUE || robotMode == RobotMode.TELEOP_RED)
         {
-            ConfigureREDBindings();
-        }
-        else if (robotMode == RobotMode.TELEOP_BLUE)
-        {
-            ConfigureBLUEBindings();
+            ConfigureBindings();
         }
     }
 
@@ -77,26 +79,18 @@ public class RobotContainer {
     {
         return m_voltageSensorValue;
     }
-
-    private void ConfigureREDBindings()
+    private void ConfigureBindings()
     {
         Gamepad driverGamepadInit = new Gamepad();
         driverGamepadInit.setGamepadId(1);
-        m_driverGamepad = new GamepadEx(driverGamepadInit);
+        m_AlexisGamepad = new GamepadEx(driverGamepadInit);
 
-        m_driverGamepad.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
-                new CollectCommand(m_intake)
-        );
-    }
+        Gamepad operatorGamepadInit =  new Gamepad();
+        driverGamepadInit.setGamepadId(2);
+        m_VictorGamepad = new GamepadEx(operatorGamepadInit);
 
-    private void ConfigureBLUEBindings()
-    {
-        Gamepad driverGamepadInit = new Gamepad();
-        driverGamepadInit.setGamepadId(1);
-        m_driverGamepad = new GamepadEx(driverGamepadInit);
-
-        m_driverGamepad.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
-                new CollectCommand(m_intake)
+        m_VictorGamepad.getGamepadButton(GamepadKeys.Button.Y).whenPressed(
+                new CollectCommand(m_intake, m_feeder)
         );
     }
 
@@ -108,5 +102,10 @@ public class RobotContainer {
     public double GetCameraTargetArea()
     {
         return m_camera.GetTargetArea();
+    }
+
+    public boolean HasFeederIdentifyANEwBall()
+    {
+        return m_feeder.GetSystemState() == FeederSubsystem.SystemState.IDLE;
     }
 }

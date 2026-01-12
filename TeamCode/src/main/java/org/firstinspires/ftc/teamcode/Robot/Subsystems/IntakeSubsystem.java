@@ -99,6 +99,23 @@ public class IntakeSubsystem extends SubsystemBase {
                 Dashboard.Telemetry_with_Text("Intake", "can't run state machine with an unknown wanted state");
                 break;
         }
+
+        switch (m_systemState)
+        {
+            case IDLE:
+                break;
+
+            case INTAKING:
+                if (robot.HasFeederIdentifyANEwBall())
+                {
+                    m_systemState = SystemState.IDLE;
+                }
+                break;
+
+            default:
+                Dashboard.Telemetry_with_Text("Intake", "can't run state machine with an unknown system state");
+                break;
+        }
     }
 
 }
